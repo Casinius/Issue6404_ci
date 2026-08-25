@@ -21,10 +21,14 @@ jobs:
             bison flex texinfo gperf libtool patchutils bc \
             zlib1g-dev libexpat-dev ninja-build git
 
-      - name: Install xmake
-        uses: xmake-io/github-action-setup@v1
-        with:
-          xmake-version: 'v2.9.9'
+      - name: Install xmake (specific version v2.9.9)
+        run: |
+          # 使用官方安装脚本，指定版本
+          curl -fsSL https://xmake.io/shget.text | bash -s -- v2.9.9
+          # 将 xmake 添加到 PATH（安装脚本默认会添加到 ~/.local/bin）
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          # 验证版本
+          xmake --version
 
       - name: Clone and build RISC-V toolchain (gcc-15)
         run: |
@@ -50,25 +54,17 @@ jobs:
       - name: Modify toolchains.lua (swap code blocks to trigger the bug)
         run: |
           cd simple-riscv-software-env
-          # 备份原文件
-          cp toolchains.lua toolchains.lua.bak
-          # 使用 sed 对调两个代码块（将 add_cxflags 移到 isa_arch_list 赋值之后）
-          # 具体对调逻辑参考 issue 描述
+          # 使用 sed 直接对调两个代码块（根据实际文件结构调整）
+          # 这里用 Python 更可靠，可以精确匹配
           python3 << 'EOF'
           import re
           with open('toolchains.lua', 'r') as f:
               content = f.read()
 
-          # 定位两个代码块并交换顺序
           # 原顺序: add_defines... -> add_asflags/add_cxflags -> isa_arch_list = ...
           # 新顺序: add_defines... -> isa_arch_list = ... -> add_asflags/add_cxflags
-          # 使用正则匹配更精确
-          pattern1 = r'(-- Add defines.*?isa_arch_list = parse_arch_string\(arch_string\))'
-          pattern2 = r'(add_asflags\(\'-nostartfiles\'.*?add_cxflags\("-ffunction-sections".*?\)\))'
-          # 由于 lua 中代码块较复杂，直接按 issue 中的示例进行替换
-          # 参考 issue 中 "变为" 之后的新顺序
-          new_content = content.replace(
-              '''-- Add defines
+          # 根据 issue 中的示例进行替换（精确匹配原字符串）
+          old_block = '''-- Add defines
           local ext_list = parse_arch_string(arch_string)
           for _, ext in ipairs(ext_list) do
               add_defines("RVISA_" .. ext:upper())
@@ -79,8 +75,9 @@ jobs:
           add_cxflags('-march=' .. arch_string)
           add_cxflags('-mabi=ilp32')
           add_cxflags("-ffunction-sections", "-fdata-sections", "-fomit-frame-pointer")
-          isa_arch_list = parse_arch_string(arch_string)''',
-              '''-- Add defines
+          isa_arch_list = parse_arch_string(arch_string)'''
+
+          new_block = '''-- Add defines
           local ext_list = parse_arch_string(arch_string)
           for _, ext in ipairs(ext_list) do
               add_defines("RVISA_" .. ext:upper())
@@ -92,10 +89,17 @@ jobs:
           add_cxflags('-march=' .. arch_string)
           add_cxflags('-mabi=ilp32')
           add_cxflags("-ffunction-sections", "-fdata-sections", "-fomit-frame-pointer")'''
-          )
-          with open('toolchains.lua', 'w') as f:
-              f.write(new_content)
-          print("toolchains.lua modified")
+
+          if old_block in content:
+              content = content.replace(old_block, new_block)
+              with open('toolchains.lua', 'w') as f:
+                  f.write(content)
+              print("toolchains.lua modified successfully")
+          else:
+              print("Warning: old_block not found, check file content")
+              # 可打印内容以便调试
+              print(content[:500])
+              exit(1)
           EOF
 
       - name: First build (should include -march, -mabi flags)
