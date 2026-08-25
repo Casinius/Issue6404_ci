@@ -48,6 +48,7 @@ jobs:
             
       - name: Build the toolchain
         run: |
+          cd riscv-gnu-toolchain
           # 配置 multilib
           archs=(rv32im_zicond_zifencei-ilp32-- rv32im_zicond_zicsr_zifencei-ilp32-- rv32ima_zicond_zicsr_zifencei-ilp32--)
           archs_string=$(IFS=';'; echo "${archs[*]}")
@@ -58,15 +59,16 @@ jobs:
           git clone https://github.com/Stehsaer/simple-riscv-software-env.git
           cd simple-riscv-software-env
           git checkout a3ae04298f8dfcc0f6e0a8f2681511be2bea0558
+          ls -la   # 确认文件存在
 
-      - name: Modify toolchains.lua (swap code blocks to trigger the bug)
+      - name: Modify toolchain.lua (swap code blocks to trigger the bug)
         run: |
           cd simple-riscv-software-env
           # 使用 sed 直接对调两个代码块（根据实际文件结构调整）
           # 这里用 Python 更可靠，可以精确匹配
           python3 << 'EOF'
           import re
-          with open('toolchains.lua', 'r') as f:
+          with open('toolchain.lua', 'r') as f:
               content = f.read()
 
           # 原顺序: add_defines... -> add_asflags/add_cxflags -> isa_arch_list = ...
@@ -100,9 +102,9 @@ jobs:
 
           if old_block in content:
               content = content.replace(old_block, new_block)
-              with open('toolchains.lua', 'w') as f:
+              with open('toolchain.lua', 'w') as f:
                   f.write(content)
-              print("toolchains.lua modified successfully")
+              print("toolchain.lua modified successfully")
           else:
               print("Warning: old_block not found, check file content")
               # 可打印内容以便调试
