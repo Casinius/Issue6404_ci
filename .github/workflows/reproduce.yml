@@ -1,0 +1,131 @@
+name: Reproduce xmake issue #6404 (exact)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf automake autotools-dev curl python3 python3-pip \
+            libmpc-dev libmpfr-dev libgmp-dev gawk build-essential \
+            bison flex texinfo gperf libtool patchutils bc \
+            zlib1g-dev libexpat-dev ninja-build git
+
+      - name: Install xmake
+        uses: xmake-io/github-action-setup@v1
+        with:
+          xmake-version: 'v2.9.9'
+
+      - name: Clone and build RISC-V toolchain (gcc-15)
+        run: |
+          git clone https://github.com/riscv-collab/riscv-gnu-toolchain.git
+          cd riscv-gnu-toolchain
+          git submodule update --init --recursive
+          cd gcc
+          git checkout releases/gcc-15
+          cd ..
+          # 配置 multilib
+          archs=(rv32im_zicond_zifencei-ilp32-- rv32im_zicond_zicsr_zifencei-ilp32-- rv32ima_zicond_zicsr_zifencei-ilp32--)
+          archs_string=$(IFS=';'; echo "${archs[*]}")
+          ./configure --prefix=/opt/riscv --with-multilib-generator="$archs_string" --enable-debug-info
+          make -j$(nproc)
+        timeout-minutes: 30
+
+      - name: Clone test project (specific commit)
+        run: |
+          git clone https://github.com/Stehsaer/simple-riscv-software-env.git
+          cd simple-riscv-software-env
+          git checkout a3ae04298f8dfcc0f6e0a8f2681511be2bea0558
+
+      - name: Modify toolchains.lua (swap code blocks to trigger the bug)
+        run: |
+          cd simple-riscv-software-env
+          # 备份原文件
+          cp toolchains.lua toolchains.lua.bak
+          # 使用 sed 对调两个代码块（将 add_cxflags 移到 isa_arch_list 赋值之后）
+          # 具体对调逻辑参考 issue 描述
+          python3 << 'EOF'
+          import re
+          with open('toolchains.lua', 'r') as f:
+              content = f.read()
+
+          # 定位两个代码块并交换顺序
+          # 原顺序: add_defines... -> add_asflags/add_cxflags -> isa_arch_list = ...
+          # 新顺序: add_defines... -> isa_arch_list = ... -> add_asflags/add_cxflags
+          # 使用正则匹配更精确
+          pattern1 = r'(-- Add defines.*?isa_arch_list = parse_arch_string\(arch_string\))'
+          pattern2 = r'(add_asflags\(\'-nostartfiles\'.*?add_cxflags\("-ffunction-sections".*?\)\))'
+          # 由于 lua 中代码块较复杂，直接按 issue 中的示例进行替换
+          # 参考 issue 中 "变为" 之后的新顺序
+          new_content = content.replace(
+              '''-- Add defines
+          local ext_list = parse_arch_string(arch_string)
+          for _, ext in ipairs(ext_list) do
+              add_defines("RVISA_" .. ext:upper())
+          end
+          add_asflags('-nostartfiles')
+          add_asflags('-march=' .. arch_string)
+          add_asflags('-mabi=ilp32')
+          add_cxflags('-march=' .. arch_string)
+          add_cxflags('-mabi=ilp32')
+          add_cxflags("-ffunction-sections", "-fdata-sections", "-fomit-frame-pointer")
+          isa_arch_list = parse_arch_string(arch_string)''',
+              '''-- Add defines
+          local ext_list = parse_arch_string(arch_string)
+          for _, ext in ipairs(ext_list) do
+              add_defines("RVISA_" .. ext:upper())
+          end
+          isa_arch_list = parse_arch_string(arch_string)
+          add_asflags('-nostartfiles')
+          add_asflags('-march=' .. arch_string)
+          add_asflags('-mabi=ilp32')
+          add_cxflags('-march=' .. arch_string)
+          add_cxflags('-mabi=ilp32')
+          add_cxflags("-ffunction-sections", "-fdata-sections", "-fomit-frame-pointer")'''
+          )
+          with open('toolchains.lua', 'w') as f:
+              f.write(new_content)
+          print("toolchains.lua modified")
+          EOF
+
+      - name: First build (should include -march, -mabi flags)
+        run: |
+          cd simple-riscv-software-env
+          ./configure releasedbg rv32im_zicond_zicsr_zifencei
+          xmake build -vDr project.kintex7-bootloader 2>&1 | tee first_build.log
+          echo "=== First build output ==="
+          cat first_build.log
+
+      - name: Second build with -r (flags should be missing)
+        run: |
+          cd simple-riscv-software-env
+          xmake build -vDr project.kintex7-bootloader 2>&1 | tee second_build.log
+          echo "=== Second build output ==="
+          cat second_build.log
+
+      - name: Verify flags missing in second build
+        run: |
+          cd simple-riscv-software-env
+          echo "=== Checking for -march flag in build logs ==="
+          if grep -q "\-march=rv32im" first_build.log; then
+            echo "✅ First build contains -march flag"
+          else
+            echo "❌ First build does NOT contain -march flag (check may fail)"
+          fi
+
+          if grep -q "\-march=rv32im" second_build.log; then
+            echo "⚠️  Second build still contains -march flag (issue not reproduced)"
+            exit 1
+          else
+            echo "✅ Second build does NOT contain -march flag (issue reproduced)"
+          fi
