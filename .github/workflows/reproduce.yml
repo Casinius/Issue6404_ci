@@ -45,12 +45,14 @@ jobs:
             cd gcc
             git checkout releases/gcc-15
             cd ..
-            # 配置 multilib
-            archs=(rv32im_zicond_zifencei-ilp32-- rv32im_zicond_zicsr_zifencei-ilp32-- rv32ima_zicond_zicsr_zifencei-ilp32--)
-            archs_string=$(IFS=';'; echo "${archs[*]}")
-            ./configure --prefix=/opt/riscv --with-multilib-generator="$archs_string" --enable-debug-info
-            make -j$(nproc)
-
+            
+      - name: Build the toolchain
+        run: |
+          # 配置 multilib
+          archs=(rv32im_zicond_zifencei-ilp32-- rv32im_zicond_zicsr_zifencei-ilp32-- rv32ima_zicond_zicsr_zifencei-ilp32--)
+          archs_string=$(IFS=';'; echo "${archs[*]}")
+          ./configure --prefix=/opt/riscv --with-multilib-generator="$archs_string" --enable-debug-info
+          make -j$(nproc)
       - name: Clone test project (specific commit)
         run: |
           git clone https://github.com/Stehsaer/simple-riscv-software-env.git
