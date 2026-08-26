@@ -92,7 +92,7 @@ jobs:
           # 配置信息会直接输出到终端，方便查看
           export XMAKE_LOGFILE="cf_build.log"
           export XMAKE_COLORTERM="nocolor"  # 可选，但推荐
-          xmake f -c -a rv32im_zicond_zicsr_zifencei --mode=releasedbg || true
+          xmake f -c -a rv32im_zicond_zicsr_zifencei --mode=releasedbg -v --diagnosis || true
           cat cf_build.log
           exit 1
 
