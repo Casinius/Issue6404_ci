@@ -53,6 +53,8 @@ jobs:
           archs_string=$(IFS=';'; echo "${archs[*]}")
           ./configure --prefix=/opt/riscv --with-multilib-generator="$archs_string" --enable-debug-info
           make -j$(nproc)
+          sudo make install
+
       - name: Clone test project (specific commit)
         run: |
           git clone https://github.com/Stehsaer/simple-riscv-software-env.git
@@ -86,6 +88,7 @@ jobs:
           xmake build -vDr project.kintex7-bootloader -v --diagnosis > flog.log 2>&1 || true
           cat flog.log
           cat f_build.log
+
       - name: Second build with -r (flags should be missing)
         run: |
           cd simple-riscv-software-env
