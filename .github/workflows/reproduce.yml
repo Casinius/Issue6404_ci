@@ -9,7 +9,7 @@ on:
 
 jobs:
   reproduce:
-    runs-on: ubuntu-latest
+    runs-on: debian-sid
 
     steps:
       - name: Install system dependencies
