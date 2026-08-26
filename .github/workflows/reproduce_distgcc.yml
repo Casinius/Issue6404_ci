@@ -39,7 +39,7 @@ jobs:
           xmake --version
 
       # ============================================================
-      # 3. 下载并安装 xPack RISC-V GCC
+      # 3. 下载并安装 xPack RISC-V GCC（预编译，不自行编译）
       # ============================================================
       - name: Install xPack RISC-V GCC
         run: |
@@ -62,10 +62,9 @@ jobs:
           git clone https://github.com/Stehsaer/simple-riscv-software-env.git
           cd simple-riscv-software-env
           git checkout a3ae04298f8dfcc0f6e0a8f2681511be2bea0558
-          ls -la
 
       # ============================================================
-      # 5. 修改 toolchain.lua 触发 bug
+      # 5. 修改 toolchain.lua（对调代码块以触发 bug）
       # ============================================================
       - name: Modify toolchain.lua
         run: |
@@ -73,23 +72,32 @@ jobs:
           git clone https://github.com/Casinius/Issue6404_ci.git
           python3 ./Issue6404_ci/replace.py
 
+
       # ============================================================
       # 6. 第一次构建（应包含 -march, -mabi）
       # ============================================================
-      - name: Run configure
+      - name: First build
         run: |
           cd simple-riscv-software-env
           chmod +x ./configure
           export PATH="$HOME/.local/bin:$PATH"
           export PATH="$HOME/xpack/bin:$PATH"
+          
+          echo "=== Running configure ==="
           ./configure releasedbg rv32im_zicond_zicsr_zifencei
-
-      - name: First build
-        run: |
-          cd simple-riscv-software-env
-          export PATH="$HOME/.local/bin:$PATH"
-          export PATH="$HOME/xpack/bin:$PATH"
+          
+          echo "=== First build (should contain -march) ==="
           xmake build -vDr project.kintex7-bootloader 2>&1 | tee first_build.log
+          
+          # 如果 xmake 崩溃，打印日志并退出
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "=== ❌ First build failed. Log: ==="
+            cat first_build.log
+            exit 1
+          fi
+          
+          echo "=== First build succeeded ==="
+
       # ============================================================
       # 7. 第二次构建带 -r（flags 应缺失）
       # ============================================================
@@ -98,12 +106,20 @@ jobs:
           cd simple-riscv-software-env
           export PATH="$HOME/.local/bin:$PATH"
           export PATH="$HOME/xpack/bin:$PATH"
+          
+          echo "=== Second build (should MISS -march) ==="
           xmake build -vDr project.kintex7-bootloader 2>&1 | tee second_build.log
-          echo "=== Second build output ==="
-          cat second_build.log
+          
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "=== ❌ Second build failed. Log: ==="
+            cat second_build.log
+            exit 1
+          fi
+          
+          echo "=== Second build succeeded ==="
 
       # ============================================================
-      # 8. 验证
+      # 8. 验证 flags 是否在第二次构建中丢失
       # ============================================================
       - name: Verify flags missing in second build
         run: |
