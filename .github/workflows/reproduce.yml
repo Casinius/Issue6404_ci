@@ -2,9 +2,9 @@ name: Reproduce xmake issue #6404 (exact)
 
 on:
   push:
-    branches: [ main, master ]
+    #branches: [ main, master ]
   pull_request:
-    branches: [ main, master ]
+    #branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
