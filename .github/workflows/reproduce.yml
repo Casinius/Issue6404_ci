@@ -79,7 +79,7 @@ jobs:
           ./configure releasedbg rv32im_zicond_zicsr_zifencei
           export XMAKE_LOGFILE="f_build.log"
           export XMAKE_COLORTERM="nocolor"
-          xmake build -vDr project.kintex7-bootloader || true
+          xmake build -vDr project.kintex7-bootloader -v --diagnosis || true
           cat f_build.log
           exit 1
 
@@ -88,7 +88,7 @@ jobs:
           cd simple-riscv-software-env
           export XMAKE_LOGFILE="s_build.log"
           export XMAKE_COLORTERM="nocolor"
-          xmake build -vDr project.kintex7-bootloader || true
+          xmake build -vDr project.kintex7-bootloader -v --diagnosis || true
           cat s_build.log
           exit 1
 
