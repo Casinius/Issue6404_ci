@@ -70,6 +70,7 @@ jobs:
       - name: First build (should include -march, -mabi flags)
         run: |
           cd simple-riscv-software-env
+          sudo chmod +x ./configure
           ./configure releasedbg rv32im_zicond_zicsr_zifencei
           xmake build -vDr project.kintex7-bootloader 2>&1 | tee first_build.log
           echo "=== First build output ==="
