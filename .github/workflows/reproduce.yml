@@ -60,11 +60,17 @@ jobs:
           git checkout a3ae04298f8dfcc0f6e0a8f2681511be2bea0558
           ls -la   # 确认文件存在
 
+      - name: Show full toolchain.lua before modify
+        run: cat simple-riscv-software-env/toolchain.lua
+
       - name: Modify toolchain.lua (swap code blocks to trigger the bug)
         run: |
           cd simple-riscv-software-env
           git clone https://github.com/Casinius/Issue6404_ci.git
           python3 ./Issue6404_ci/replace.py
+
+      - name: Show full toolchain.lua
+        run: cat simple-riscv-software-env/toolchain.lua
 
       - name: First build (should include -march, -mabi flags)
         run: |

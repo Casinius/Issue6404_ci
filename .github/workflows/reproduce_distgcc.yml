@@ -65,6 +65,10 @@ jobs:
           cd simple-riscv-software-env
           git checkout a3ae04298f8dfcc0f6e0a8f2681511be2bea0558
 
+
+      - name: Show full toolchain.lua before modify
+        run: cat simple-riscv-software-env/toolchain.lua
+
       # ============================================================
       # 5. 修改 toolchain.lua（对调代码块以触发 bug）
       # ============================================================
@@ -74,14 +78,10 @@ jobs:
           git clone https://github.com/Casinius/Issue6404_ci.git
           python3 ./Issue6404_ci/replace.py
 
-      # ============================================================
-      # 5.1 验证修改后的 toolchain.lua（可选）
-      # ============================================================
-      - name: Show modified toolchain.lua
-        run: |
-          cd simple-riscv-software-env
-          echo "=== Modified toolchain.lua (first 50 lines) ==="
-          head -50 toolchain.lua
+
+      
+      - name: Show full toolchain.lua
+        run: cat simple-riscv-software-env/toolchain.lua
 
       # ============================================================
       # 6. 配置项目 (使用 xmake f)
