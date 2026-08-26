@@ -43,18 +43,21 @@ jobs:
       # ============================================================
       # 3. 下载并安装 xPack RISC-V GCC（预编译）
       # ============================================================
-      - name: Install xPack RISC-V GCC
+      - name: Install RISC-V GCC to /usr/local
         run: |
-          curl -fsSL -o xpack-riscv.tar.gz "$XPACK_URL"
-          mkdir -p "$HOME/xpack"
-          tar -xzf xpack-riscv.tar.gz -C "$HOME/xpack" --strip-components=1
-          echo "$HOME/xpack/bin" >> "$GITHUB_PATH"
+          # 下载社区预编译工具链
+          wget -O riscv-gcc.tar.gz https://github.com/stnolting/riscv-gcc-prebuilt/releases/download/rv32i-131023/riscv32-unknown-elf.gcc-13.2.0.tar.gz
+          # 创建目标目录（需要 sudo）
+          sudo mkdir -p /usr/local/riscv
+          # 解压到 /usr/local/riscv（--strip-components=1 去掉顶层文件夹）
+          sudo tar -xzf riscv-gcc.tar.gz -C /usr/local/riscv --strip-components=1
+          # 将 bin 目录加入 PATH，供后续步骤使用
+          echo "/usr/local/riscv/bin" >> "$GITHUB_PATH"
 
       - name: Verify toolchain
         run: |
-          export PATH="$HOME/xpack/bin:$PATH"
-          riscv-none-elf-gcc --version
-          which riscv-none-elf-gcc
+          riscv32-unknown-elf-gcc --version
+          which riscv32-unknown-elf-gcc
 
       # ============================================================
       # 4. 克隆测试项目
