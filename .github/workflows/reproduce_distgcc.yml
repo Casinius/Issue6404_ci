@@ -76,17 +76,20 @@ jobs:
       # ============================================================
       # 6. 第一次构建（应包含 -march, -mabi）
       # ============================================================
-      - name: First build
+      - name: Run configure
         run: |
           cd simple-riscv-software-env
           chmod +x ./configure
           export PATH="$HOME/.local/bin:$PATH"
           export PATH="$HOME/xpack/bin:$PATH"
           ./configure releasedbg rv32im_zicond_zicsr_zifencei
-          xmake build -vDr project.kintex7-bootloader 2>&1 | tee first_build.log
-          echo "=== First build output ==="
-          cat first_build.log
 
+      - name: First build
+        run: |
+          cd simple-riscv-software-env
+          export PATH="$HOME/.local/bin:$PATH"
+          export PATH="$HOME/xpack/bin:$PATH"
+          xmake build -vDr project.kintex7-bootloader 2>&1 | tee first_build.log
       # ============================================================
       # 7. 第二次构建带 -r（flags 应缺失）
       # ============================================================
