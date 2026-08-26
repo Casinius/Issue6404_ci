@@ -2,6 +2,8 @@ name: DistGcc
 
 on:
   push:
+    paths:
+      - '.github/workflows/reproduce_distgcc.yml'  # 或者 .yml/.yaml 后缀
   workflow_dispatch:
 
 env:

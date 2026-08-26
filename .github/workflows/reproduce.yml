@@ -2,6 +2,8 @@ name: Reproduce xmake issue #6404 (exact)
 
 on:
   push:
+    paths:
+      - '.github/workflows/reproduce.yml'  # 或者 .yml/.yaml 后缀
   workflow_dispatch:
 
 jobs:
