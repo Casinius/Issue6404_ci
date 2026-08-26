@@ -64,53 +64,8 @@ jobs:
       - name: Modify toolchain.lua (swap code blocks to trigger the bug)
         run: |
           cd simple-riscv-software-env
-          # 使用 sed 直接对调两个代码块（根据实际文件结构调整）
-          # 这里用 Python 更可靠，可以精确匹配
-          python3 << 'EOF'
-          import re
-          with open('toolchain.lua', 'r') as f:
-              content = f.read()
-
-          # 原顺序: add_defines... -> add_asflags/add_cxflags -> isa_arch_list = ...
-          # 新顺序: add_defines... -> isa_arch_list = ... -> add_asflags/add_cxflags
-          # 根据 issue 中的示例进行替换（精确匹配原字符串）
-          old_block = '''-- Add defines
-          local ext_list = parse_arch_string(arch_string)
-          for _, ext in ipairs(ext_list) do
-              add_defines("RVISA_" .. ext:upper())
-          end
-          add_asflags('-nostartfiles')
-          add_asflags('-march=' .. arch_string)
-          add_asflags('-mabi=ilp32')
-          add_cxflags('-march=' .. arch_string)
-          add_cxflags('-mabi=ilp32')
-          add_cxflags("-ffunction-sections", "-fdata-sections", "-fomit-frame-pointer")
-          isa_arch_list = parse_arch_string(arch_string)'''
-
-          new_block = '''-- Add defines
-          local ext_list = parse_arch_string(arch_string)
-          for _, ext in ipairs(ext_list) do
-              add_defines("RVISA_" .. ext:upper())
-          end
-          isa_arch_list = parse_arch_string(arch_string)
-          add_asflags('-nostartfiles')
-          add_asflags('-march=' .. arch_string)
-          add_asflags('-mabi=ilp32')
-          add_cxflags('-march=' .. arch_string)
-          add_cxflags('-mabi=ilp32')
-          add_cxflags("-ffunction-sections", "-fdata-sections", "-fomit-frame-pointer")'''
-
-          if old_block in content:
-              content = content.replace(old_block, new_block)
-              with open('toolchain.lua', 'w') as f:
-                  f.write(content)
-              print("toolchain.lua modified successfully")
-          else:
-              print("Warning: old_block not found, check file content")
-              # 可打印内容以便调试
-              print(content[:500])
-              exit(1)
-          EOF
+          git clone https://github.com/Casinius/Issue6404_ci.git
+          python3 ./Issue6404_ci/replace.py
 
       - name: First build (should include -march, -mabi flags)
         run: |
