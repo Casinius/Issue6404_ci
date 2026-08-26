@@ -27,6 +27,7 @@ jobs:
         run: |
           curl -fsSL https://xmake.io/shget.text | bash -s -- v2.9.9
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
           xmake --version
 
       # ===== 删除了原先的 Clone and build RISC-V toolchain 和 Build the toolchain =====
