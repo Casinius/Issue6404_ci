@@ -90,7 +90,11 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           export PATH="$HOME/xpack/bin:$PATH"
           # 配置信息会直接输出到终端，方便查看
-          xmake f -c -a rv32im_zicond_zicsr_zifencei --mode=releasedbg
+          export XMAKE_LOGFILE="cf_build.log"
+          export XMAKE_COLORTERM="nocolor"  # 可选，但推荐
+          xmake f -c -a rv32im_zicond_zicsr_zifencei --mode=releasedbg || true
+          cat cf_build.log
+          exit 1
 
       # ============================================================
       # 7. 第一次构建 (不带 -r，应包含 -march)
@@ -103,14 +107,11 @@ jobs:
           # 设置日志文件路径，并禁用颜色输出以保证日志为纯文本
           export XMAKE_LOGFILE="first_build.log"
           export XMAKE_COLORTERM="nocolor"  # 可选，但推荐
-          xmake build -vD project.kintex7-bootloader
+          xmake build -vD project.kintex7-bootloader || true
           echo "=== First build log saved to first_build.log ==="
           # 构建失败时打印日志内容以便调试
-          if [ $? -ne 0 ]; then
-            echo "=== ❌ First build failed. Log: ==="
-            cat first_build.log
-            exit 1
-          fi
+          cat first_build.log
+          exit 1
           echo "=== First build succeeded ==="
 
       # ============================================================
@@ -124,13 +125,10 @@ jobs:
           # 设置不同的日志文件名
           export XMAKE_LOGFILE="second_build.log"
           export XMAKE_COLORTERM="nocolor"
-          xmake build -vDr project.kintex7-bootloader
+          xmake build -vDr project.kintex7-bootloader || true
           echo "=== Second build log saved to second_build.log ==="
-          if [ $? -ne 0 ]; then
-            echo "=== ❌ Second build failed. Log: ==="
-            cat second_build.log
-            exit 1
-          fi
+          cat second_build.log
+          exit 1
           echo "=== Second build succeeded ==="
       # ============================================================
       # 9. 验证 flags 是否在第二次构建中丢失
