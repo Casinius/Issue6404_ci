@@ -1,6 +1,7 @@
 name: DistGcc
 
 on:
+  push:
   workflow_dispatch:
 
 env:
