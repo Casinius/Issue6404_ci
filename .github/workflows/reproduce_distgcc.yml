@@ -1,0 +1,77 @@
+name: Reproduce xmake issue #6404 (exact)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  reproduce:
+    runs-on: debian-sid
+
+    steps:
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf automake autotools-dev curl python3 python3-pip gcc \
+            libmpc-dev libmpfr-dev libgmp-dev gawk build-essential \
+            bison flex texinfo gperf libtool patchutils bc \
+            zlib1g-dev libexpat-dev ninja-build git \
+            gcc-15-riscv64-linux-gnu binutils-riscv64-linux-gnu   # 新增发行版工具链
+
+      - name: Install xmake (specific version v2.9.9)
+        run: |
+          curl -fsSL https://xmake.io/shget.text | bash -s -- v2.9.9
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          xmake --version
+
+      # ===== 删除了原先的 Clone and build RISC-V toolchain 和 Build the toolchain =====
+
+      - name: Clone test project (specific commit)
+        run: |
+          git clone https://github.com/Stehsaer/simple-riscv-software-env.git
+          cd simple-riscv-software-env
+          git checkout a3ae04298f8dfcc0f6e0a8f2681511be2bea0558
+          ls -la
+
+      - name: Modify toolchain.lua (swap code blocks and adjust ccprefix)
+        run: |
+          cd simple-riscv-software-env
+          git clone https://github.com/Casinius/Issue6404_ci.git
+          python3 ./Issue6404_ci/replace.py   # 你的 replace.py 里可以包含 ccprefix 的修改
+
+      - name: First build (should include -march, -mabi flags)
+        run: |
+          cd simple-riscv-software-env
+          sudo chmod +x ./configure
+          ./configure releasedbg rv32im_zicond_zicsr_zifencei
+          xmake build -vDr project.kintex7-bootloader 2>&1 | tee first_build.log
+          echo "=== First build output ==="
+          cat first_build.log
+
+      - name: Second build with -r (flags should be missing)
+        run: |
+          cd simple-riscv-software-env
+          xmake build -vDr project.kintex7-bootloader 2>&1 | tee second_build.log
+          echo "=== Second build output ==="
+          cat second_build.log
+
+      - name: Verify flags missing in second build
+        run: |
+          cd simple-riscv-software-env
+          echo "=== Checking for -march flag in build logs ==="
+          if grep -q "\-march=rv32im" first_build.log; then
+            echo "✅ First build contains -march flag"
+          else
+            echo "❌ First build does NOT contain -march flag (check may fail)"
+          fi
+
+          if grep -q "\-march=rv32im" second_build.log; then
+            echo "⚠️  Second build still contains -march flag (issue not reproduced)"
+            exit 1
+          else
+            echo "✅ Second build does NOT contain -march flag (issue reproduced)"
+          fi
