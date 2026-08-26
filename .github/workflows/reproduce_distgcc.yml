@@ -82,25 +82,31 @@ jobs:
           head -50 toolchain.lua
 
       # ============================================================
-      # 6. 配置项目（使用 xmake f 替代 ./configure）
+      # 6. 配置项目 (使用 xmake f)
       # ============================================================
       - name: Configure with xmake
         run: |
           cd simple-riscv-software-env
           export PATH="$HOME/.local/bin:$PATH"
           export PATH="$HOME/xpack/bin:$PATH"
+          # 配置信息会直接输出到终端，方便查看
           xmake f -c -a rv32im_zicond_zicsr_zifencei --mode=releasedbg
 
       # ============================================================
-      # 7. 第一次构建（不带 -r，应包含 -march）
+      # 7. 第一次构建 (不带 -r，应包含 -march)
       # ============================================================
       - name: First build (without -r)
         run: |
           cd simple-riscv-software-env
           export PATH="$HOME/.local/bin:$PATH"
           export PATH="$HOME/xpack/bin:$PATH"
-          xmake build -vD project.kintex7-bootloader 2>&1 | tee first_build.log
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+          # 设置日志文件路径，并禁用颜色输出以保证日志为纯文本
+          export XMAKE_LOGFILE="first_build.log"
+          export XMAKE_COLORTERM="nocolor"  # 可选，但推荐
+          xmake build -vD project.kintex7-bootloader
+          echo "=== First build log saved to first_build.log ==="
+          # 构建失败时打印日志内容以便调试
+          if [ $? -ne 0 ]; then
             echo "=== ❌ First build failed. Log: ==="
             cat first_build.log
             exit 1
@@ -108,21 +114,24 @@ jobs:
           echo "=== First build succeeded ==="
 
       # ============================================================
-      # 8. 第二次构建（带 -r，应缺失 -march）
+      # 8. 第二次构建 (带 -r，应缺失 -march)
       # ============================================================
       - name: Second build (with -r)
         run: |
           cd simple-riscv-software-env
           export PATH="$HOME/.local/bin:$PATH"
           export PATH="$HOME/xpack/bin:$PATH"
-          xmake build -vDr project.kintex7-bootloader 2>&1 | tee second_build.log
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+          # 设置不同的日志文件名
+          export XMAKE_LOGFILE="second_build.log"
+          export XMAKE_COLORTERM="nocolor"
+          xmake build -vDr project.kintex7-bootloader
+          echo "=== Second build log saved to second_build.log ==="
+          if [ $? -ne 0 ]; then
             echo "=== ❌ Second build failed. Log: ==="
             cat second_build.log
             exit 1
           fi
           echo "=== Second build succeeded ==="
-
       # ============================================================
       # 9. 验证 flags 是否在第二次构建中丢失
       # ============================================================
