@@ -33,6 +33,7 @@ jobs:
 
       - name: Clone test project (specific commit)
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           git clone https://github.com/Stehsaer/simple-riscv-software-env.git
           cd simple-riscv-software-env
           git checkout a3ae04298f8dfcc0f6e0a8f2681511be2bea0558
@@ -40,12 +41,14 @@ jobs:
 
       - name: Modify toolchain.lua (swap code blocks and adjust ccprefix)
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           cd simple-riscv-software-env
           git clone https://github.com/Casinius/Issue6404_ci.git
           python3 ./Issue6404_ci/replace.py   # 你的 replace.py 里可以包含 ccprefix 的修改
 
       - name: First build (should include -march, -mabi flags)
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           cd simple-riscv-software-env
           chmod +x ./configure
           ./configure releasedbg rv32im_zicond_zicsr_zifencei
@@ -55,6 +58,7 @@ jobs:
 
       - name: Second build with -r (flags should be missing)
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           cd simple-riscv-software-env
           xmake build -vDr project.kintex7-bootloader 2>&1 | tee second_build.log
           echo "=== Second build output ==="
@@ -62,6 +66,7 @@ jobs:
 
       - name: Verify flags missing in second build
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           cd simple-riscv-software-env
           echo "=== Checking for -march flag in build logs ==="
           if grep -q "\-march=rv32im" first_build.log; then
