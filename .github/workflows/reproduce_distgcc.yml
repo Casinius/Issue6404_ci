@@ -1,6 +1,7 @@
 name: DISTGCC #6404 (exact)
 
 on:
+  push:
   workflow_dispatch:
 
 jobs:
