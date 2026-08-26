@@ -1,4 +1,4 @@
-name: Reproduce xmake issue #6404 (exact)
+name: DISTGCC #6404 (exact)
 
 on:
   push:
