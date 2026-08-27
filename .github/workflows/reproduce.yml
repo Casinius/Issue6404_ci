@@ -78,6 +78,7 @@ jobs:
         run: |
           cd simple-riscv-software-env
           sudo chmod +x ./configure
+          cat ./configure
           ./configure releasedbg rv32im_zicond_zicsr_zifencei
 
       - name: First build (should include -march, -mabi flags)
