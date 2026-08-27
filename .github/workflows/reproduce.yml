@@ -44,7 +44,15 @@ jobs:
             cd gcc
             git checkout releases/gcc-15
             cd ..
-            
+      
+      - name: Verify toolchain
+        run: |
+          echo "=== RISC-V GCC version ==="
+          riscv64-unknown-elf-gcc --version || echo "riscv64-unknown-elf-gcc not found!"
+
+          echo "=== Environment PATH ==="
+          echo $PATH
+
       - name: Build the toolchain
         run: |
           cd riscv-gnu-toolchain
