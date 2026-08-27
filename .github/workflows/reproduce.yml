@@ -54,7 +54,7 @@ jobs:
           archs=(rv32im_zicond_zifencei-ilp32-- rv32im_zicond_zicsr_zifencei-ilp32-- rv32ima_zicond_zicsr_zifencei-ilp32--)
           archs_string=$(IFS=';'; echo "${archs[*]}")
           ./configure --with-multilib-generator="$archs_string" --enable-debug-info
-          make -j$(nproc)
+          sudo make -j$(nproc)
           sudo make install
 
       - name: Clone test project (specific commit)
