@@ -45,13 +45,7 @@ jobs:
             git checkout releases/gcc-15
             cd ..
       
-      - name: Verify toolchain
-        run: |
-          echo "=== RISC-V GCC version ==="
-          riscv64-unknown-elf-gcc --version || echo "riscv64-unknown-elf-gcc not found!"
-
-          echo "=== Environment PATH ==="
-          echo $PATH
+      
 
       - name: Build the toolchain
         run: |
@@ -82,12 +76,24 @@ jobs:
       - name: Show full toolchain.lua
         run: cat simple-riscv-software-env/toolchain.lua
 
+      - name: Verify toolchain
+        run: |
+          echo "=== RISC-V GCC version ==="
+          riscv64-unknown-elf-gcc --version || echo "riscv64-unknown-elf-gcc not found!"
+
+          echo "=== Environment PATH ==="
+          echo $PATH
+
       - name: Configure build
         run: |
           cd simple-riscv-software-env
           sudo chmod +x ./configure
           cat ./configure
+          export XMAKE_LOGFILE="rv_conf_build.log"
+          export XMAKE_COLORTERM="nocolor"
           ./configure releasedbg rv32im_zicond_zicsr_zifencei
+          cat rv_conf_build.log
+
 
       - name: First build (should include -march, -mabi flags)
         run: |
