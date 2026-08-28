@@ -104,7 +104,7 @@ jobs:
           cat ./configure
           export XMAKE_LOGFILE="rv_conf_build.log"
           export XMAKE_COLORTERM="nocolor"
-          ./configure releasedbg rv32im_zicond_zicsr_zifencei
+          ./configure releasedbg rv32im_zicond_zicsr_zifencei_zmmul
           cat rv_conf_build.log
 
 
