@@ -113,32 +113,19 @@ jobs:
           cd simple-riscv-software-env
           export XMAKE_LOGFILE="f_build.log"
           export XMAKE_COLORTERM="nocolor"
-          xmake build -vDr project.kintex7-bootloader > flog.log 2>&1 || true
+          xmake build -vD project.kintex7-bootloader > flog.log 2>&1 || true
           cat flog.log
-          cat f_build.log
 
       - name: Second build with -r (flags should be missing)
         run: |
           cd simple-riscv-software-env
           export XMAKE_LOGFILE="s_build.log"
           export XMAKE_COLORTERM="nocolor"
-          xmake build -vDr project.kintex7-bootloader > slog.log 2>&1 || true
+          xmake build -vD project.kintex7-bootloader > slog.log 2>&1 || true
           cat slog.log
-          cat s_build.log
 
       - name: Verify flags missing in second build
         run: |
           cd simple-riscv-software-env
-          echo "=== Checking for -march flag in build logs ==="
-          if grep -q "\-march=rv32im" first_build.log; then
-            echo "✅ First build contains -march flag"
-          else
-            echo "❌ First build does NOT contain -march flag (check may fail)"
-          fi
-
-          if grep -q "\-march=rv32im" second_build.log; then
-            echo "⚠️  Second build still contains -march flag (issue not reproduced)"
-            exit 1
-          else
-            echo "✅ Second build does NOT contain -march flag (issue reproduced)"
-          fi
+          xmake project -k compile_commands
+          cat compile_commands.json
