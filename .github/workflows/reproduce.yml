@@ -127,5 +127,8 @@ jobs:
       - name: Verify flags missing in second build
         run: |
           cd simple-riscv-software-env
-          xmake project -k compile_commands
-          cat compile_commands.json
+          xmake project -k compile_commands || echo "project command failed"
+          ls -la compile_commands.json || echo "File not found"
+          cat compile_commands.json || echo "cat failed"
+          # 如果没找到，搜索其他位置
+          find . -name compile_commands.jso
