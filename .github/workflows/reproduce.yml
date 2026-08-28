@@ -113,7 +113,7 @@ jobs:
           cd simple-riscv-software-env
           export XMAKE_LOGFILE="f_build.log"
           export XMAKE_COLORTERM="nocolor"
-          xmake build -vDr project.kintex7-bootloader -v --diagnosis > flog.log 2>&1 || true
+          xmake build -vDr project.kintex7-bootloader > flog.log 2>&1 || true
           cat flog.log
           cat f_build.log
 
@@ -122,7 +122,7 @@ jobs:
           cd simple-riscv-software-env
           export XMAKE_LOGFILE="s_build.log"
           export XMAKE_COLORTERM="nocolor"
-          xmake build -vDr project.kintex7-bootloader -v --diagnosis > slog.log 2>&1 || true
+          xmake build -vDr project.kintex7-bootloader > slog.log 2>&1 || true
           cat slog.log
           cat s_build.log
 
