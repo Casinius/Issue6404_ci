@@ -121,7 +121,7 @@ jobs:
           cd simple-riscv-software-env
           export XMAKE_LOGFILE="s_build.log"
           export XMAKE_COLORTERM="nocolor"
-          xmake build -vD project.kintex7-bootloader > slog.log 2>&1 || true
+          xmake build -vD project.kintex7-bootloader > slog.log
           cat slog.log
 
       - name: Verify flags missing in second build
@@ -131,4 +131,4 @@ jobs:
           ls -la compile_commands.json || echo "File not found"
           cat compile_commands.json || echo "cat failed"
           # 如果没找到，搜索其他位置
-          find . -name compile_commands.jso
+          find . -name compile_commands.json
