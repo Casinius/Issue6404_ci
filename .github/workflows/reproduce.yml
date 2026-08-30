@@ -113,7 +113,7 @@ jobs:
           cd simple-riscv-software-env
           export XMAKE_LOGFILE="f_build.log"
           export XMAKE_COLORTERM="nocolor"
-          xmake build -vD project.kintex7-bootloader > flog.log 2>&1 || true
+          xmake build -vDr project.kintex7-bootloader > flog.log 2>&1 || true
           cat flog.log
 
       - name: Second build with -r (flags should be missing)
@@ -121,7 +121,7 @@ jobs:
           cd simple-riscv-software-env
           export XMAKE_LOGFILE="s_build.log"
           export XMAKE_COLORTERM="nocolor"
-          xmake build -vD project.kintex7-bootloader > slog.log
+          xmake build -vDr project.kintex7-bootloader > slog.log
           cat slog.log
 
       - name: Verify flags missing in second build
